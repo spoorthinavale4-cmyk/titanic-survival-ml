@@ -72,51 +72,58 @@ model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
 
+import os
+os.makedirs("outputs", exist_ok=True)
+
+
 conf_matrix = confusion_matrix(y_test, y_pred)
 
-plt.figure()
-sns.heatmap(conf_matrix, annot=True, cmap='Blues', fmt='d')
+fig1, ax1 = plt.subplots(figsize=(6, 5))
+sns.heatmap(conf_matrix, annot=True, cmap='Blues', fmt='d', ax=ax1)
 
-# Set the title and labels
-plt.title('Titanic Classification Confusion Matrix')
-plt.xlabel('Predicted')
-plt.ylabel('Actual')
+ax1.set_title('Titanic Classification Confusion Matrix')
+ax1.set_xlabel('Predicted')
+ax1.set_ylabel('Actual')
 
-# Show the plot
-plt.tight_layout()
-plt.show()
+fig1.tight_layout()
+fig1.savefig("outputs/confusion_matrix.png", dpi=300, bbox_inches='tight')
+plt.close(fig1)
+
+print("Confusion matrix saved.")
+
 
 importances = model.best_estimator_.named_steps['classifier'].feature_importances_
 
-# Combine numerical and categorical feature names
-numerical_feature_names = numerical_features
-categorical_feature_names = (model.best_estimator_.named_steps['preprocessor']
-                                     .named_transformers_['cat']
-                                     .named_steps['onehot']
-                                     .get_feature_names_out(categorical_features)
-                            )
-feature_names = numerical_feature_names + list(categorical_feature_names)
+categorical_feature_names = (
+    model.best_estimator_
+    .named_steps['preprocessor']
+    .named_transformers_['cat']
+    .named_steps['onehot']
+    .get_feature_names_out(categorical_features)
+)
+
+feature_names = numerical_features + list(categorical_feature_names)
 
 importance_df = pd.DataFrame({
     'Feature': feature_names,
-    'Coefficient': importances
-}).sort_values(by='Coefficient', ascending=False)
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
 
-# Plotting
-plt.figure(figsize=(10, 6))
-plt.barh(importance_df['Feature'], importance_df['Coefficient'].abs())
-plt.gca().invert_yaxis()
+fig2, ax2 = plt.subplots(figsize=(10, 6))
+ax2.barh(importance_df['Feature'], importance_df['Importance'])
+ax2.invert_yaxis()
 
-plt.title('Feature Importance - Random Forest')
-plt.xlabel('Importance')
+ax2.set_title('Feature Importance - Random Forest')
+ax2.set_xlabel('Importance')
 
-plt.tight_layout()
-plt.savefig("outputs/confusion_matrix.png", dpi=300, bbox_inches='tight')  # <-- ADD THIS
-plt.show()
+fig2.tight_layout()
+fig2.savefig("outputs/feature_importance.png", dpi=300, bbox_inches='tight')
+plt.close(fig2)
 
-# Print test score
+print("Feature importance plot saved.")
+
+
 test_score = model.best_estimator_.score(X_test, y_test)
 print(f"\nTest set accuracy: {test_score:.2%}")
-
 
 
